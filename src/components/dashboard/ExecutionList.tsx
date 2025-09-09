@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useExecutions } from '@/hooks/useExecutions';
 import type { CompositePipelineStatus } from '@/lib/types';
 import { ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ExecutionListProps {
   onSelectExecution: (execution: CompositePipelineStatus) => void;
@@ -119,8 +120,8 @@ export function ExecutionList({ onSelectExecution, selectedExecutionId }: Execut
                 <TableRow
                   key={execution.execution_id}
                   className={cn(
-                    'cursor-pointer hover:bg-muted/50',
-                    selectedExecutionId === execution.execution_id && 'bg-muted'
+                    /* interactivity */ 'cursor-pointer hover:bg-muted/50',
+                    /* state */ selectedExecutionId === execution.execution_id && 'bg-muted'
                   )}
                   onClick={() => onSelectExecution(execution)}
                 >
@@ -163,8 +164,4 @@ export function ExecutionList({ onSelectExecution, selectedExecutionId }: Execut
       </CardContent>
     </Card>
   );
-}
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return inputs.filter(Boolean).join(' ');
 }

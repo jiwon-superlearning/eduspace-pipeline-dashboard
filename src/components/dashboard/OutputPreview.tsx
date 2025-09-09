@@ -88,7 +88,10 @@ export function OutputPreview({
 
   if (outputKeys.length === 0) {
     return (
-      <div className={cn("text-sm text-muted-foreground", className)}>
+      <div className={cn(
+        /* text */ 'text-sm text-muted-foreground',
+        className
+      )}>
         No outputs available
       </div>
     );
@@ -104,17 +107,26 @@ export function OutputPreview({
   const totalFiles = outputKeys.length;
 
   return (
-    <div className={cn("border rounded-lg", className)}>
+    <div className={cn(
+      /* surface */ 'border bg-background',
+      /* radius */ 'rounded-lg',
+      className
+    )}>
       <div 
-        className="px-4 py-3 bg-gray-50 border-b flex items-center justify-between cursor-pointer"
+        className={cn(
+          /* spacing */ 'px-4 py-3',
+          /* surface */ 'bg-gray-50 border-b',
+          /* layout */ 'flex items-center justify-between',
+          /* interactivity */ 'cursor-pointer'
+        )}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-2">
-          <button className="p-0">
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        <div className={cn('flex items-center gap-2')}>
+          <button className={cn('p-0')}>
+            {isExpanded ? <ChevronUp className={cn('h-4 w-4')} /> : <ChevronDown className={cn('h-4 w-4')} />}
           </button>
-          <span className="font-medium">{title}</span>
-          <span className="text-sm text-muted-foreground">
+          <span className={cn('font-medium')}>{title}</span>
+          <span className={cn('text-sm text-muted-foreground')}>
             ({totalFiles} {totalFiles === 1 ? 'file' : 'files'})
           </span>
         </div>
@@ -127,50 +139,50 @@ export function OutputPreview({
               handleDownloadAll();
             }}
           >
-            <Download className="h-3 w-3 mr-1" />
+            <Download className={cn('h-3 w-3 mr-1')} />
             Download All
           </Button>
         )}
       </div>
 
       {isExpanded && (
-        <div className="p-4">
+        <div className={cn('p-4')}>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 w-full">
+            <TabsList className={cn('grid grid-cols-4 w-full')}>
               {tabCounts.images > 0 && (
-                <TabsTrigger value="images" className="flex items-center gap-1">
-                  <ImageIcon className="h-3 w-3" />
+                <TabsTrigger value="images" className={cn('flex items-center gap-1')}>
+                  <ImageIcon className={cn('h-3 w-3')} />
                   Images ({tabCounts.images})
                 </TabsTrigger>
               )}
               {tabCounts.pdfs > 0 && (
-                <TabsTrigger value="pdfs" className="flex items-center gap-1">
-                  <FileText className="h-3 w-3" />
+                <TabsTrigger value="pdfs" className={cn('flex items-center gap-1')}>
+                  <FileText className={cn('h-3 w-3')} />
                   PDFs ({tabCounts.pdfs})
                 </TabsTrigger>
               )}
               {tabCounts.json > 0 && (
-                <TabsTrigger value="json" className="flex items-center gap-1">
-                  <FileJson className="h-3 w-3" />
+                <TabsTrigger value="json" className={cn('flex items-center gap-1')}>
+                  <FileJson className={cn('h-3 w-3')} />
                   JSON ({tabCounts.json})
                 </TabsTrigger>
               )}
               {tabCounts.others > 0 && (
-                <TabsTrigger value="others" className="flex items-center gap-1">
-                  <File className="h-3 w-3" />
+                <TabsTrigger value="others" className={cn('flex items-center gap-1')}>
+                  <File className={cn('h-3 w-3')} />
                   Others ({tabCounts.others})
                 </TabsTrigger>
               )}
             </TabsList>
 
-            <TabsContent value="images" className="mt-4">
+            <TabsContent value="images" className={cn('mt-4')}>
               {fileGroups.images.length > 0 && (
                 <ImageViewer fileKeys={fileGroups.images} />
               )}
             </TabsContent>
 
-            <TabsContent value="pdfs" className="mt-4">
-              <div className="space-y-4">
+            <TabsContent value="pdfs" className={cn('mt-4')}>
+              <div className={cn('space-y-4')}>
                 {fileGroups.pdfs.map(pdfKey => {
                   const fileName = pdfKey.split('/').pop() || 'document.pdf';
                   return (
@@ -185,8 +197,8 @@ export function OutputPreview({
               </div>
             </TabsContent>
 
-            <TabsContent value="json" className="mt-4">
-              <div className="space-y-4">
+            <TabsContent value="json" className={cn('mt-4')}>
+              <div className={cn('space-y-4')}>
                 {fileGroups.json.map(jsonKey => {
                   const fileName = jsonKey.split('/').pop() || 'data.json';
                   return (
@@ -201,23 +213,23 @@ export function OutputPreview({
               </div>
             </TabsContent>
 
-            <TabsContent value="others" className="mt-4">
-              <div className="space-y-2">
+            <TabsContent value="others" className={cn('mt-4')}>
+              <div className={cn('space-y-2')}>
                 {fileGroups.others.map(fileKey => {
                   const fileName = fileKey.split('/').pop() || 'file';
                   const baseUrl = process.env.NEXT_PUBLIC_FILE_DOWNLOAD_BASE_URL || 'http://classday.iptime.org:8000/api/v1';
                   const url = `${baseUrl}/files/download/${fileKey}?raw=true`;
                   
                   return (
-                    <div key={fileKey} className="flex items-center gap-2 p-2 border rounded">
-                      <File className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium flex-1">{fileName}</span>
+                    <div key={fileKey} className={cn('flex items-center gap-2 p-2 border rounded')}>
+                      <File className={cn('h-4 w-4 text-muted-foreground')} />
+                      <span className={cn('text-sm font-medium flex-1')}>{fileName}</span>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => window.open(url, '_blank')}
                       >
-                        <Download className="h-4 w-4" />
+                        <Download className={cn('h-4 w-4')} />
                       </Button>
                     </div>
                   );

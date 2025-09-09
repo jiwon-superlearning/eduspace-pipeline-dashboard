@@ -17,6 +17,7 @@ import {
   Download
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { cn } from '@/lib/utils';
 
 // Dynamically import PDF viewer to avoid SSR issues
 const SimplePDFViewer = dynamic(
@@ -78,17 +79,35 @@ export function PDFViewer({ fileKey, fileName = 'document.pdf', className = '', 
 
   if (!showPreview) {
     return (
-      <div className={`flex items-center gap-2 p-2 border rounded ${className}`}>
-        <FileText className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">{fileName}</span>
-        <div className="flex gap-1 ml-auto">
+      <div
+        className={cn(
+          /* layout */ 'flex items-center gap-2',
+          /* spacing */ 'p-2',
+          /* surface */ 'border bg-background',
+          /* radius */ 'rounded-md',
+          className
+        )}
+      >
+        <FileText className={cn(
+          /* sizing */ 'h-4 w-4',
+          /* color */ 'text-muted-foreground'
+        )} />
+        <span className={cn(
+          /* text */ 'text-sm font-medium'
+        )}>{fileName}</span>
+        <div className={cn(
+          /* layout */ 'flex gap-1',
+          /* push */ 'ml-auto'
+        )}>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => setIsModalOpen(true)}
             disabled={!fileUrl || isLoading}
           >
-            <Maximize2 className="h-4 w-4" />
+            <Maximize2 className={cn(
+              /* sizing */ 'h-4 w-4'
+            )} />
           </Button>
           <Button
             size="sm"
@@ -96,7 +115,9 @@ export function PDFViewer({ fileKey, fileName = 'document.pdf', className = '', 
             onClick={handleDownload}
             disabled={!fileUrl || isLoading}
           >
-            <Download className="h-4 w-4" />
+            <Download className={cn(
+              /* sizing */ 'h-4 w-4'
+            )} />
           </Button>
         </div>
 
@@ -113,20 +134,38 @@ export function PDFViewer({ fileKey, fileName = 'document.pdf', className = '', 
   }
 
   return (
-    <div className={`border rounded-lg overflow-hidden ${className}`}>
-      <div className="bg-gray-50 border-b p-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">{fileName}</span>
+    <div className={cn(
+      /* surface */ 'border bg-background',
+      /* radius */ 'rounded-lg',
+      /* overflow */ 'overflow-hidden',
+      className
+    )}>
+      <div className={cn(
+        /* surface */ 'bg-gray-50 border-b',
+        /* layout */ 'flex items-center justify-between',
+        /* spacing */ 'p-2'
+      )}>
+        <div className={cn(
+          /* layout */ 'flex items-center gap-2'
+        )}>
+          <FileText className={cn(
+            /* sizing */ 'h-4 w-4',
+            /* color */ 'text-muted-foreground'
+          )} />
+          <span className={cn(
+            /* text */ 'text-sm font-medium'
+          )}>{fileName}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className={cn(
+          /* layout */ 'flex items-center gap-1'
+        )}>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => setIsModalOpen(true)}
             disabled={!fileUrl || isLoading}
           >
-            <Maximize2 className="h-4 w-4" />
+            <Maximize2 className={cn('h-4 w-4')} />
           </Button>
           <Button
             size="sm"
@@ -134,24 +173,38 @@ export function PDFViewer({ fileKey, fileName = 'document.pdf', className = '', 
             onClick={handleDownload}
             disabled={!fileUrl || isLoading}
           >
-            <Download className="h-4 w-4" />
+            <Download className={cn('h-4 w-4')} />
           </Button>
         </div>
       </div>
 
-      <div className="bg-gray-100 p-4" style={{ height: '400px' }}>
+      <div className={cn(
+        /* surface */ 'bg-gray-100',
+        /* spacing */ 'p-4'
+      )} style={{ height: '400px' }}>
         {isLoading && (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className={cn(
+            /* layout */ 'flex items-center justify-center',
+            /* sizing */ 'h-full'
+          )}>
+            <Loader2 className={cn(
+              /* sizing */ 'h-8 w-8',
+              /* motion */ 'animate-spin',
+              /* color */ 'text-muted-foreground'
+            )} />
           </div>
         )}
         {error && (
-          <div className="flex items-center justify-center h-full text-red-600">
+          <div className={cn(
+            /* layout */ 'flex items-center justify-center',
+            /* sizing */ 'h-full',
+            /* color */ 'text-red-600'
+          )}>
             <span>{error}</span>
           </div>
         )}
         {!isLoading && !error && fileUrl && (
-          <SimplePDFViewer fileUrl={fileUrl} height="100%" />
+          <SimplePDFViewer fileUrl={fileUrl} height="100%" className={cn('bg-background')} />
         )}
       </div>
 
@@ -177,7 +230,10 @@ interface PDFViewerModalProps {
 function PDFViewerModal({ isOpen, onClose, fileUrl, fileName }: PDFViewerModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+      <DialogContent className={cn(
+        /* sizing */ 'max-w-6xl h-[90vh]',
+        /* layout */ 'flex flex-col'
+      )}>
         <DialogHeader>
           <DialogTitle>{fileName}</DialogTitle>
           <DialogDescription>
@@ -185,7 +241,10 @@ function PDFViewerModal({ isOpen, onClose, fileUrl, fileName }: PDFViewerModalPr
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden">
+        <div className={cn(
+          /* layout */ 'flex-1',
+          /* overflow */ 'overflow-hidden'
+        )}>
           <PDFViewerWithToolbar fileUrl={fileUrl} height="100%" showToolbar={true} />
         </div>
       </DialogContent>
