@@ -15,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { StatusBadge } from './StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useExecutions } from '@/hooks/useExecutions';
+import { useSearchParams } from 'next/navigation';
 import type { CompositePipelineStatus } from '@/lib/types';
 import { ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,12 +26,43 @@ interface ExecutionListProps {
 }
 
 export function ExecutionList({ onSelectExecution, selectedExecutionId }: ExecutionListProps) {
+  const searchParams = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const { data: executions = [], isLoading, error, refetch } = useExecutions({
     limit: 50,
     include_completed_recent: true,
     status_filter: statusFilter,
   });
+
+  const q = (searchParams.get('q') || '').toLowerCase().trim();
+  const filtered = executions.filter((e) => {
+    if (!q) return true;
+    return (
+      e.execution_id.toLowerCase().includes(q) ||
+      (e.name || '').toLowerCase().includes(q)
+    );
+  });
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (typeof window !== 'undefined' && navigator && (navigator as any).clipboard && (navigator as any).clipboard.writeText) {
+        await (navigator as any).clipboard.writeText(text);
+        return;
+      }
+    } catch (_) {}
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    } catch (_) {}
+  };
 
   const formatDuration = (seconds: number) => {
     if (seconds === 0) return '-';
@@ -79,7 +111,7 @@ export function ExecutionList({ onSelectExecution, selectedExecutionId }: Execut
                   size="sm"
                   onClick={() => setStatusFilter(status === 'all' ? undefined : status)}
                 >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {status === 'all' ? 'Recent' : status.charAt(0).toUpperCase() + status.slice(1)}
                 </Button>
               ))}
             </div>
@@ -107,7 +139,7 @@ export function ExecutionList({ onSelectExecution, selectedExecutionId }: Execut
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead>ID</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Duration</TableHead>
@@ -116,7 +148,7 @@ export function ExecutionList({ onSelectExecution, selectedExecutionId }: Execut
               </TableRow>
             </TableHeader>
             <TableBody>
-              {executions.map((execution) => (
+              {filtered.map((execution) => (
                 <TableRow
                   key={execution.execution_id}
                   className={cn(
@@ -127,9 +159,32 @@ export function ExecutionList({ onSelectExecution, selectedExecutionId }: Execut
                 >
                   <TableCell className="font-medium">
                     <div>
-                      <div>{execution.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {execution.execution_id.substring(0, 8)}...
+                      <div className={cn(
+                        /* layout */ 'flex items-center gap-2'
+                      )}>
+                        <span className={cn(
+                          /* font */ 'font-mono',
+                          /* text */ 'text-sm'
+                        )}>{execution.execution_id.substring(0, 8)}...</span>
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className={cn(
+                            /* sizing */ 'h-6 px-2',
+                            /* color */ 'bg-blue-600 hover:bg-blue-700 text-white'
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(execution.execution_id.substring(0, 8));
+                          }}
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                      <div className={cn(
+                        /* text */ 'text-xs text-muted-foreground truncate'
+                      )}>
+                        {execution.name || '-'}
                       </div>
                     </div>
                   </TableCell>

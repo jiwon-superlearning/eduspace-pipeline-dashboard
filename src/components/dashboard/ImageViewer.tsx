@@ -302,6 +302,7 @@ export function ImageViewer({ fileKeys, className = '', showThumbnails = true }:
         selectedIndex={selectedIndex}
         onIndexChange={setSelectedIndex}
         onDownload={handleDownload}
+        showThumbnails={showThumbnails}
       />
     </div>
   );
@@ -315,6 +316,7 @@ interface ImageViewerModalProps {
   selectedIndex: number;
   onIndexChange: (index: number) => void;
   onDownload: (fileKey: string) => void;
+  showThumbnails?: boolean;
 }
 
 function ImageViewerModal({ 
@@ -324,7 +326,8 @@ function ImageViewerModal({
   imageUrls, 
   selectedIndex, 
   onIndexChange,
-  onDownload 
+  onDownload,
+  showThumbnails = true
 }: ImageViewerModalProps) {
   const currentFileKey = fileKeys[selectedIndex];
   const currentUrl = imageUrls[currentFileKey];
@@ -410,7 +413,8 @@ function ImageViewerModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        /* sizing */ 'max-w-6xl h-[90vh]',
+        /* sizing */ 'w-[95vw] h-[90vh]',
+        /* responsive max */ 'sm:max-w-[95vw] md:max-w-[95vw] lg:max-w-[1600px] xl:max-w-[1920px] 2xl:max-w-[1920px]',
         /* layout */ 'flex flex-col'
       )}>
         <DialogHeader>

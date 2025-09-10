@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -8,9 +9,12 @@ import { StepProgress } from './StepProgress';
 import { PDFViewer } from './PDFViewer';
 import { OutputPreview } from './OutputPreview';
 import { useExecutionDetail } from '@/hooks/useExecutions';
-import { ArrowLeft, Clock, Calendar, AlertCircle, CheckCircle, XCircle, FileText, Eye } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, AlertCircle, CheckCircle, XCircle, FileText, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { CompositePipelineStatus } from '@/lib/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import VLMResultsViewer from './VLMResultsViewer';
+import { cn } from '@/lib/utils';
 
 interface ExecutionDetailProps {
   executionId: string | null;
@@ -19,6 +23,9 @@ interface ExecutionDetailProps {
 
 export function ExecutionDetail({ executionId, onBack }: ExecutionDetailProps) {
   const { data: execution, isLoading, error } = useExecutionDetail(executionId);
+  const [isVlmOpen, setIsVlmOpen] = useState(false);
+  const [vlmLoading, setVlmLoading] = useState(false);
+  const [vlmResults, setVlmResults] = useState<any[]>([]);
 
   if (!executionId) {
     return (
@@ -111,6 +118,46 @@ export function ExecutionDetail({ executionId, onBack }: ExecutionDetailProps) {
             </div>
             <div className="flex items-center gap-2">
               {getStatusIcon(execution.status)}
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  /* layout */ 'ml-2',
+                  /* color */ 'bg-blue-600 hover:bg-blue-700 text-white'
+                )}
+                onClick={async () => {
+                  setIsVlmOpen(true);
+                  setVlmLoading(true);
+                  try {
+                    const jsonKeys: string[] = [];
+                    for (const step of execution.steps) {
+                      for (const key of step.output_keys) {
+                        const name = (key.split('/').pop() || '').toLowerCase();
+                        if (name.endsWith('_results.json')) jsonKeys.push(key);
+                      }
+                    }
+                    const results: any[] = [];
+                    await Promise.all(
+                      jsonKeys.map(async (k) => {
+                        try {
+                          const url = await (await import('@/lib/api-client')).apiClient.getFileUrl(k);
+                          const resp = await fetch(url);
+                          if (!resp.ok) return;
+                          const data = await resp.json();
+                          if (Array.isArray(data?.vlm_results)) {
+                            results.push(...data.vlm_results);
+                          }
+                        } catch {}
+                      })
+                    );
+                    setVlmResults(results);
+                  } finally {
+                    setVlmLoading(false);
+                  }
+                }}
+              >
+                수율 체크
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -266,6 +313,40 @@ export function ExecutionDetail({ executionId, onBack }: ExecutionDetailProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* VLM Results Modal */}
+      <Dialog open={isVlmOpen} onOpenChange={setIsVlmOpen}>
+        <DialogHeader>
+          <DialogTitle>수율 체크</DialogTitle>
+        </DialogHeader>
+        <DialogContent className={cn(
+          /* layout */ 'w-[95vw] h-[90vh]',
+          /* responsive width */ 'sm:max-w-[95vw] md:max-w-[95vw] lg:max-w-[1600px] xl:max-w-[1920px] 2xl:max-w-[1920px]'
+        )}>
+          <div className={cn(
+            /* layout */ 'flex-1 overflow-auto'
+          )}>
+            {vlmLoading ? (
+              <div className={cn(
+                /* layout */ 'flex items-center justify-center h-full',
+                /* color */ 'text-muted-foreground'
+              )}>
+                <Loader2 className={cn(
+                  /* size */ 'h-6 w-6',
+                  /* animation */ 'animate-spin'
+                )} />
+              </div>
+            ) : vlmResults.length === 0 ? (
+              <div className={cn(
+                /* typography */ 'text-sm',
+                /* color */ 'text-muted-foreground'
+              )}>표시할 문항이 없습니다.</div>
+            ) : (
+              <VLMResultsViewer results={vlmResults} executionId={execution.execution_id} durationSeconds={execution.duration_seconds} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

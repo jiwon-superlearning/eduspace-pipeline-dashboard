@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Reveal from './Reveal';
 import { useExecutions } from '@/hooks/useExecutions';
 import { cn } from '@/lib/utils';
 import { Timer, CheckCircle2, Activity, BarChart3 } from 'lucide-react';
@@ -35,26 +36,26 @@ export function StatsCards() {
       /* grid */ 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
       /* spacing */ 'gap-4'
     )}>
-      <StatCard
+      <Reveal><StatCard
         title="Total Executions"
         value={isLoading ? '—' : String(total)}
         icon={<BarChart3 className={cn('h-4 w-4 text-primary')} />}
-      />
-      <StatCard
+      /></Reveal>
+      <Reveal delay={0.05}><StatCard
         title="Running"
         value={isLoading ? '—' : String(running)}
         icon={<Activity className={cn('h-4 w-4 text-blue-600')} />}
-      />
-      <StatCard
+      /></Reveal>
+      <Reveal delay={0.1}><StatCard
         title="Success Rate"
         value={isLoading ? '—' : `${successRate}%`}
         icon={<CheckCircle2 className={cn('h-4 w-4 text-green-600')} />}
-      />
-      <StatCard
+      /></Reveal>
+      <Reveal delay={0.15}><StatCard
         title="Avg Duration"
         value={isLoading ? '—' : formatDurationAvg(avgDuration)}
         icon={<Timer className={cn('h-4 w-4 text-amber-600')} />}
-      />
+      /></Reveal>
     </div>
   );
 }

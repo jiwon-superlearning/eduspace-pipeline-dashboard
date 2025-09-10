@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
+import VLMResultsViewer from './VLMResultsViewer';
 
 interface JSONViewerProps {
   fileKey: string;
@@ -165,7 +166,15 @@ export function JSONViewer({ fileKey, fileName = 'data.json', className = '', sh
           </div>
         )}
         {jsonData && !isLoading && !error && (
-          <JSONTree data={jsonData} />
+          <div className="space-y-4">
+            {Array.isArray(jsonData?.vlm_results) ? (
+              <div>
+                <div className="mb-3 text-xs text-gray-300">Detected vlm_results: rendering questions below</div>
+                <VLMResultsViewer results={jsonData.vlm_results} />
+              </div>
+            ) : null}
+            <JSONTree data={jsonData} />
+          </div>
         )}
       </div>
 
@@ -329,7 +338,10 @@ function JSONViewerModal({ isOpen, onClose, jsonData, fileName, onDownload }: JS
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-auto bg-gray-900 text-gray-100 rounded p-4">
+        <div className="flex-1 overflow-auto bg-gray-900 text-gray-100 rounded p-4 space-y-4">
+          {Array.isArray(jsonData?.vlm_results) ? (
+            <VLMResultsViewer results={jsonData.vlm_results} />
+          ) : null}
           <JSONTree data={jsonData} />
         </div>
       </DialogContent>

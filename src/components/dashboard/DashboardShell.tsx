@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Activity, Menu, Settings, ListChecks, RefreshCw, Search, Sun, Moon, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -12,6 +13,10 @@ interface DashboardShellProps {
 export function DashboardShell({ children }: DashboardShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     const root = document.documentElement;
@@ -20,6 +25,23 @@ export function DashboardShell({ children }: DashboardShellProps) {
     setIsDark(dark);
     root.classList.toggle('dark', dark);
   }, []);
+
+  // sync local query with URL
+  useEffect(() => {
+    const q = searchParams.get('q') || '';
+    setQuery(q);
+  }, [searchParams]);
+
+  // debounce update URL when query changes locally
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (query) params.set('q', query);
+      else params.delete('q');
+      router.replace(`${pathname}?${params.toString()}`);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [query]);
 
   const toggleTheme = () => {
     const next = !isDark;
@@ -79,6 +101,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
                   /* text */ 'text-sm',
                   /* focus */ 'outline-none ring-0 focus:border-primary'
                 )}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
               />
             </div>
           </div>
