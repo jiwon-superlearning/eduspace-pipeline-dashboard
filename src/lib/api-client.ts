@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { getRuntimeApiBaseUrl, getRuntimeFileDownloadBaseUrl } from './runtime-config.tsx';
 import type { CompositePipelineStatus, ExecutionFilters } from './types';
 
 class ApiClient {
@@ -6,7 +7,7 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
+      baseURL: getRuntimeApiBaseUrl(),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -16,7 +17,9 @@ class ApiClient {
     // Add request interceptor for logging
     this.client.interceptors.request.use(
       (config) => {
-        console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+        // Always use latest baseURL
+        config.baseURL = getRuntimeApiBaseUrl();
+        console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
         return config;
       },
       (error) => {
@@ -93,7 +96,7 @@ class ApiClient {
    */
   async getFileUrl(fileKey: string): Promise<string> {
     // Use the external API endpoint for downloading files
-    const baseUrl = process.env.NEXT_PUBLIC_FILE_DOWNLOAD_BASE_URL || 'http://classday.iptime.org:18000/api/v1';
+    const baseUrl = getRuntimeFileDownloadBaseUrl();
     return `${baseUrl}/files/download/${fileKey}?raw=true`;
   }
 

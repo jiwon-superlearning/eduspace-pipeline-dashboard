@@ -17,6 +17,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getRuntimeFileDownloadBaseUrl } from '@/lib/runtime-config.tsx';
 
 interface OutputPreviewProps {
   outputKeys: string[];
@@ -80,7 +81,7 @@ export function OutputPreview({
     // In a real implementation, this could zip all files
     // For now, we'll just open each file in a new tab
     outputKeys.forEach(async (key) => {
-      const baseUrl = process.env.NEXT_PUBLIC_FILE_DOWNLOAD_BASE_URL || 'http://classday.iptime.org:8000/api/v1';
+      const baseUrl = getRuntimeFileDownloadBaseUrl();
       const url = `${baseUrl}/files/download/${key}?raw=true`;
       window.open(url, '_blank');
     });
@@ -217,7 +218,7 @@ export function OutputPreview({
               <div className={cn('space-y-2')}>
                 {fileGroups.others.map(fileKey => {
                   const fileName = fileKey.split('/').pop() || 'file';
-                  const baseUrl = process.env.NEXT_PUBLIC_FILE_DOWNLOAD_BASE_URL || 'http://classday.iptime.org:8000/api/v1';
+                  const baseUrl = getRuntimeFileDownloadBaseUrl();
                   const url = `${baseUrl}/files/download/${fileKey}?raw=true`;
                   
                   return (

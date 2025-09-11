@@ -8,7 +8,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api/v1}
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://classday.iptime.org:8000/api/v1}
       - NEXT_PUBLIC_REFRESH_INTERVAL=${NEXT_PUBLIC_REFRESH_INTERVAL:-5000}
     restart: unless-stopped
     networks:

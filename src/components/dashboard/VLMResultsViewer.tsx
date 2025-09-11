@@ -134,17 +134,24 @@ export function VLMResultsViewer({ results, className = '', executionId, duratio
     });
   };
 
-  // Keyboard shortcuts: Space -> next, '1' -> toggle ineligible on current
+  // Keyboard shortcuts: F -> next, D -> previous, Q -> toggle ineligible on current
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // ignore when focusing inputs/textarea
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (copyFallbackOpen) return;
-      if (e.key === ' ' || e.code === 'Space') {
+      // ignore during IME composition and when modifier keys (except Shift) are pressed
+      if ((e as any).isComposing) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      if (e.code === 'KeyF') {
         e.preventDefault();
         goNext();
-      } else if (e.key.toLowerCase() === 'q') {
+      } else if (e.code === 'KeyD') {
+        e.preventDefault();
+        goPrev();
+      } else if (e.code === 'KeyQ') {
         e.preventDefault();
         if (viewMode === 'single') toggleFlag(currentIndex);
       }
@@ -177,7 +184,7 @@ export function VLMResultsViewer({ results, className = '', executionId, duratio
         <div className={cn('flex items-center gap-3')}>
           <div className={cn('text-sm font-medium')}>문항 요약</div>
           <div className={cn('text-xs text-muted-foreground hidden md:block')}>
-            단축키: Space 다음, q 부적합 토글
+            단축키: F 다음, D 이전, Q 부적합 토글
           </div>
         </div>
         <div className={cn('flex items-center gap-2')}>
@@ -202,9 +209,9 @@ export function VLMResultsViewer({ results, className = '', executionId, duratio
           <div className={cn('flex items-center justify-between')}>
             <div className={cn('text-sm text-muted-foreground')}>{totalCount > 0 ? `${currentIndex + 1} / ${totalCount}` : '0 / 0'}</div>
             <div className={cn('flex items-center gap-2')}>
-              <Button size="sm" variant="outline" onClick={goPrev}>이전</Button>
+              <Button size="sm" variant="outline" onClick={goPrev}>이전 (D)</Button>
               <Button size="sm" variant="outline" onClick={() => toggleFlag(currentIndex)}>{flagged.has(currentIndex) ? '부적합 해제' : '부적합'}</Button>
-              <Button size="sm" onClick={goNext}>다음</Button>
+              <Button size="sm" onClick={goNext}>다음 (F)</Button>
             </div>
           </div>
           {totalCount > 0 && (() => {
@@ -249,17 +256,46 @@ export function VLMResultsViewer({ results, className = '', executionId, duratio
                       ) : null}
                     </div>
                   </section>
-                  <section className={cn('border rounded-md overflow-hidden')}>
-                    <div className={cn('px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30 border-b')}>결과</div>
-                    <div className={cn('bg-blue-50/40 dark:bg-blue-950/20 p-3 text-black dark:text-black overflow-auto max-h-[70vh]')}>
+                  <section className={cn(
+                    /* surface */ 'border rounded-md overflow-hidden',
+                    /* layout */ 'flex flex-col'
+                  )}>
+                    <div className={cn(
+                      /* spacing */ 'px-2 py-1',
+                      /* typography */ 'text-xs font-medium text-blue-700 dark:text-blue-300',
+                      /* surface */ 'bg-blue-50 dark:bg-blue-950/30 border-b'
+                    )}>결과</div>
+                    <div className={cn(
+                      /* surface */ 'bg-blue-50/40 dark:bg-blue-950/20',
+                      /* spacing */ 'p-3',
+                      /* typography */ 'text-black dark:text-black',
+                      /* layout */ 'flex flex-col items-center justify-center',
+                      /* overflow */ 'overflow-auto max-h-[70vh] flex-1 overflow-y-auto'
+                    )}>
                       {a.question && (<KaTeXHtml html={a.question} tick={currentIndex} />)}
                       {a.refer && (<KaTeXHtml html={a.refer} className={cn('border rounded-md p-2 bg-muted/30')} tick={currentIndex + 1} />)}
                       {choices.length > 0 && (
-                        <ol className={cn('space-y-2 list-none pl-0 text-black dark:text-black')}>
+                        <ol className={cn(
+                          /* spacing */ 'space-y-2',
+                          /* list */ 'list-none pl-0',
+                          /* typography */ 'text-black dark:text-black'
+                        )}>
                           {choices.map((c, i) => (
-                            <li key={i} className={cn('flex items-start gap-2')}>
-                              <span className={cn('inline-flex items-center justify-center h-5 w-5 rounded-full border border-blue-300 bg-blue-50 text-[11px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800 flex-none')}>{i + 1}</span>
-                              <div className={cn('prose prose-sm max-w-none text-black dark:text-black')}>
+                            <li key={i} className={cn(
+                              /* layout */ 'flex items-start gap-2'
+                            )}>
+                              <span className={cn(
+                                /* layout */ 'inline-flex items-center justify-center',
+                                /* sizing */ 'h-5 w-5',
+                                /* surface */ 'rounded-full border border-blue-300 bg-blue-50',
+                                /* typography */ 'text-[11px] font-semibold text-blue-700',
+                                /* dark mode */ 'dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800',
+                                /* flex */ 'flex-none'
+                              )}>{i + 1}</span>
+                              <div className={cn(
+                                /* prose */ 'prose prose-sm max-w-none',
+                                /* typography */ 'text-black dark:text-black'
+                              )}>
                                 <KaTeXHtml html={c} tick={currentIndex * 10 + i} />
                               </div>
                             </li>

@@ -5,6 +5,7 @@ import { Activity, Menu, Settings, ListChecks, RefreshCw, Search, Sun, Moon, Use
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import RuntimeConfigDialog from '@/components/settings/RuntimeConfigDialog';
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [query, setQuery] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -114,6 +116,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
             <Button variant="ghost" size="icon" onClick={toggleTheme} title="Toggle theme">
               {isDark ? <Sun className={cn('h-4 w-4')} /> : <Moon className={cn('h-4 w-4')} />}
             </Button>
+            <Button variant="ghost" size="icon" onClick={() => setSettingsOpen(true)} title="Settings">
+              <Settings className={cn('h-4 w-4')} />
+            </Button>
             <Button variant="outline" size="sm" className={cn('hidden md:inline-flex items-center gap-2')}>
               <User className={cn('h-4 w-4')} />
               <span className={cn('text-xs')}>Admin</span>
@@ -174,6 +179,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           </div>
         </main>
       </div>
+      <RuntimeConfigDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }

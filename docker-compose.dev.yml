@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: eduspace-dashboard-dev
+    container_name: eduspace-dashboard-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://classday.iptime.org:8000/api/v1}
+      - NEXT_PUBLIC_REFRESH_INTERVAL=${NEXT_PUBLIC_REFRESH_INTERVAL:-3000}
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    # Bind-mount source for hot-reload; keep node_modules as a named volume to use container's install
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next
+    # If you need to join the external network as in prod, uncomment below
+    # networks:
+    #   - pipeline-network
+    restart: unless-stopped
+
+volumes:
+  node_modules:
+  next_cache:
+
+# networks:
+#   pipeline-network:
+#     external: true
+#     name: eduspace-pipelines_default
+
+

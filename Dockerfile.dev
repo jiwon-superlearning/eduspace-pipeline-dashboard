@@ -1,0 +1,28 @@
+# Dev (watch) stage for Next.js with pnpm
+FROM node:20-alpine
+
+# System deps for Next.js (SWC on Alpine)
+RUN apk add --no-cache libc6-compat
+
+# Enable pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy package manager files first for better layer caching
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies (kept in container; bind-mount will not override due to named volume)
+RUN pnpm install
+
+ENV NODE_ENV=development \
+    NEXT_TELEMETRY_DISABLED=1 \
+    CHOKIDAR_USEPOLLING=true \
+    WATCHPACK_POLLING=true
+
+EXPOSE 3000
+
+# Run dev server listening on all interfaces for Docker
+CMD ["pnpm", "dev", "--", "-H", "0.0.0.0", "-p", "3000"]
+
+
