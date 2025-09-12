@@ -9,6 +9,7 @@ services:
     container_name: eduspace-dashboard-dev
     ports:
       - "3000:3000"
+    command: ["pnpm", "exec", "next", "dev", "--turbopack", "--hostname", "0.0.0.0", "--port", "3000"]
     environment:
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1

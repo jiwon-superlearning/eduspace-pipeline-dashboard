@@ -43,22 +43,50 @@ export function VLMResultsViewer({ results, className = '', executionId, duratio
 
   const storageKeys = useMemo(() => Array.from(new Set((results || []).map(r => r.storage_key).filter(Boolean) as string[])), [results]);
 
+  const ensureImageUrl = async (key: string) => {
+    if (!key) return;
+    if (imageUrls[key] || loading[key]) return;
+    setLoading(prev => ({ ...prev, [key]: true }));
+    try {
+      const url = await apiClient.getFileUrl(key);
+      setImageUrls(prev => ({ ...prev, [key]: url }));
+      setErrors(prev => ({ ...prev, [key]: '' }));
+    } catch (e) {
+      setErrors(prev => ({ ...prev, [key]: 'Failed to load image' }));
+    } finally {
+      setLoading(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
   useEffect(() => {
-    storageKeys.forEach(async (key) => {
-      if (!key) return;
-      if (imageUrls[key] || loading[key]) return;
-      setLoading(prev => ({ ...prev, [key]: true }));
-      try {
-        const url = await apiClient.getFileUrl(key);
-        setImageUrls(prev => ({ ...prev, [key]: url }));
-        setErrors(prev => ({ ...prev, [key]: '' }));
-      } catch (e) {
-        setErrors(prev => ({ ...prev, [key]: 'Failed to load image' }));
-      } finally {
-        setLoading(prev => ({ ...prev, [key]: false }));
-      }
-    });
-  }, [storageKeys]);
+    // Prioritized, concurrency-limited prefetch
+    const total = results.length;
+    let orderedKeys: string[] = storageKeys;
+    if (viewMode === 'single' && total > 0) {
+      const currKey = results[currentIndex]?.storage_key || '';
+      const nextKey = results[(currentIndex + 1) % total]?.storage_key || '';
+      const prevKey = results[(currentIndex - 1 + total) % total]?.storage_key || '';
+      const rest = storageKeys.filter(k => k && k !== currKey && k !== nextKey && k !== prevKey);
+      orderedKeys = [currKey, nextKey, prevKey, ...rest];
+    }
+    const pending = orderedKeys.filter(k => k && !imageUrls[k] && !loading[k]);
+    if (pending.length === 0) return;
+    let cancelled = false;
+    let idx = 0;
+    const MAX_CONCURRENCY = 4;
+    const run = async () => {
+      const workers = new Array(Math.min(MAX_CONCURRENCY, pending.length)).fill(0).map(async () => {
+        while (!cancelled) {
+          const key = pending[idx++];
+          if (!key) break;
+          await ensureImageUrl(key);
+        }
+      });
+      await Promise.all(workers);
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [storageKeys, viewMode, currentIndex, results]);
 
   const flaggedCount = flagged.size;
   const totalCount = results.length;
@@ -224,6 +252,7 @@ export function VLMResultsViewer({ results, className = '', executionId, duratio
             const isLoading = key ? loading[key] : false;
             const error = key ? errors[key] : '';
             const isFlagged = flagged.has(idx);
+            const isImageReady = (!key) || (!!src && !isLoading && !error);
             return (
               <article className={cn(
                 'border rounded-lg bg-background p-4 flex flex-col gap-3',
@@ -247,12 +276,23 @@ export function VLMResultsViewer({ results, className = '', executionId, duratio
                     <div className={cn('bg-muted/20 flex items-start justify-center min-h-40')}>
                       {!key ? (
                         <div className={cn('text-xs text-muted-foreground p-3 text-center')}>No source image</div>
-                      ) : isLoading ? (
-                        <div className={cn('text-xs text-muted-foreground p-3')}>Loading...</div>
+                      ) : (isLoading || (!src && !error)) ? (
+                        <div className={cn(
+                          /* layout */ 'flex items-center gap-2',
+                          /* spacing */ 'p-3',
+                          /* text */ 'text-xs text-muted-foreground'
+                        )}>
+                          <div className={cn(
+                            /* shape */ 'h-4 w-4 rounded-full',
+                            /* border */ 'border-2 border-muted-foreground/30 border-t-transparent',
+                            /* motion */ 'animate-spin'
+                          )} />
+                          <span>Loading...</span>
+                        </div>
                       ) : error ? (
                         <div className={cn('text-xs text-red-600 p-3')}>{error}</div>
                       ) : src ? (
-                        <img src={src} alt={key} className={cn('w-full h-full object-contain')} />
+                        <img src={src} alt={key} loading="eager" fetchPriority="high" className={cn('w-full h-full object-contain')} />
                       ) : null}
                     </div>
                   </section>
@@ -268,39 +308,56 @@ export function VLMResultsViewer({ results, className = '', executionId, duratio
                     <div className={cn(
                       /* surface */ 'bg-blue-50/40 dark:bg-blue-950/20',
                       /* spacing */ 'p-3',
-                      /* typography */ 'text-black dark:text-black',
-                      /* layout */ 'flex flex-col items-center justify-center',
+                      /* typography */ 'text-black dark:text-black text-md text-justify',
+                      /* layout */ 'flex flex-col justify-center',
                       /* overflow */ 'overflow-auto max-h-[70vh] flex-1 overflow-y-auto'
                     )}>
-                      {a.question && (<KaTeXHtml html={a.question} tick={currentIndex} />)}
-                      {a.refer && (<KaTeXHtml html={a.refer} className={cn('border rounded-md p-2 bg-muted/30')} tick={currentIndex + 1} />)}
-                      {choices.length > 0 && (
-                        <ol className={cn(
-                          /* spacing */ 'space-y-2',
-                          /* list */ 'list-none pl-0',
-                          /* typography */ 'text-black dark:text-black'
+                      {!isImageReady ? (
+                        <div className={cn(
+                          /* layout */ 'flex items-center gap-2',
+                          /* spacing */ 'p-2',
+                          /* text */ 'text-xs text-muted-foreground'
                         )}>
-                          {choices.map((c, i) => (
-                            <li key={i} className={cn(
-                              /* layout */ 'flex items-start gap-2'
+                          <div className={cn(
+                            /* shape */ 'h-4 w-4 rounded-full',
+                            /* border */ 'border-2 border-muted-foreground/30 border-t-transparent',
+                            /* motion */ 'animate-spin'
+                          )} />
+                          <span>Loading...</span>
+                        </div>
+                      ) : (
+                        <>
+                          {a.question && (<KaTeXHtml html={a.question} tick={currentIndex} />)}
+                          {a.refer && (<KaTeXHtml html={a.refer} className={cn('border rounded-md p-2 bg-muted/30')} tick={currentIndex + 1} />)}
+                          {choices.length > 0 && (
+                            <ol className={cn(
+                              /* spacing */ 'space-y-2',
+                              /* list */ 'list-none pl-0',
+                              /* typography */ 'text-black dark:text-black'
                             )}>
-                              <span className={cn(
-                                /* layout */ 'inline-flex items-center justify-center',
-                                /* sizing */ 'h-5 w-5',
-                                /* surface */ 'rounded-full border border-blue-300 bg-blue-50',
-                                /* typography */ 'text-[11px] font-semibold text-blue-700',
-                                /* dark mode */ 'dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800',
-                                /* flex */ 'flex-none'
-                              )}>{i + 1}</span>
-                              <div className={cn(
-                                /* prose */ 'prose prose-sm max-w-none',
-                                /* typography */ 'text-black dark:text-black'
-                              )}>
-                                <KaTeXHtml html={c} tick={currentIndex * 10 + i} />
-                              </div>
-                            </li>
-                          ))}
-                        </ol>
+                              {choices.map((c, i) => (
+                                <li key={i} className={cn(
+                                  /* layout */ 'flex items-start gap-2'
+                                )}>
+                                  <span className={cn(
+                                    /* layout */ 'inline-flex items-center justify-center',
+                                    /* sizing */ 'h-5 w-5',
+                                    /* surface */ 'rounded-full border border-blue-300 bg-blue-50',
+                                    /* typography */ 'text-[11px] font-semibold text-blue-700',
+                                    /* dark mode */ 'dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800',
+                                    /* flex */ 'flex-none'
+                                  )}>{i + 1}</span>
+                                  <div className={cn(
+                                    /* prose */ 'prose prose-sm max-w-none',
+                                    /* typography */ 'text-black dark:text-black'
+                                  )}>
+                                    <KaTeXHtml html={c} tick={currentIndex * 10 + i} />
+                                  </div>
+                                </li>
+                              ))}
+                            </ol>
+                          )}
+                        </>
                       )}
                     </div>
                   </section>
@@ -377,12 +434,23 @@ export function VLMResultsViewer({ results, className = '', executionId, duratio
                 )}>
                   {!key ? (
                     <div className={cn('text-xs text-muted-foreground p-3 text-center')}>No source image</div>
-                  ) : isLoading ? (
-                    <div className={cn('text-xs text-muted-foreground p-3')}>Loading...</div>
+                  ) : (isLoading || (!src && !error)) ? (
+                    <div className={cn(
+                      /* layout */ 'flex items-center gap-2',
+                      /* spacing */ 'p-3',
+                      /* text */ 'text-xs text-muted-foreground'
+                    )}>
+                      <div className={cn(
+                        /* shape */ 'h-4 w-4 rounded-full',
+                        /* border */ 'border-2 border-muted-foreground/30 border-t-transparent',
+                        /* motion */ 'animate-spin'
+                      )} />
+                      <span>Loading...</span>
+                    </div>
                   ) : error ? (
                     <div className={cn('text-xs text-red-600 p-3')}>{error}</div>
                   ) : src ? (
-                    <img src={src} alt={key} className={cn('w-full h-full object-contain')} />
+                    <img src={src} alt={key} loading="lazy" fetchPriority="low" className={cn('w-full h-full object-contain')} />
                   ) : null}
                 </div>
               </section>
