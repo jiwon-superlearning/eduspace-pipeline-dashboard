@@ -172,7 +172,7 @@ export default function ExecutionsListPage() {
             {
               title: 'Created At',
               dataIndex: 'created_at',
-              render: (v: string) => dayjs(v).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss [KST]'),
+              render: (v: string) => dayjs.utc(v).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss [KST]'),
               sorter: (a: any, b: any) => dayjs(a.created_at).valueOf() - dayjs(b.created_at).valueOf(),
               defaultSortOrder: 'descend',
               sortDirections: ['descend', 'ascend'],
