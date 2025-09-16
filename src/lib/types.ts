@@ -85,4 +85,5 @@ export interface ExecutionFilters {
   limit?: number;
   include_completed_recent?: boolean;
   status_filter?: string;
+  status_filters?: string[];
 }

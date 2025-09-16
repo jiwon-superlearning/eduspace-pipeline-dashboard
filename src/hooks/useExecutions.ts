@@ -15,6 +15,7 @@ export function useExecutions(filters?: ExecutionFilters) {
     queryKey: ['executions', filters],
     queryFn: async () => {
       const hosts = getEnabledHosts();
+      const hasMultiStatuses = Array.isArray(filters?.status_filters) && (filters?.status_filters?.length || 0) > 0;
       if (hosts.length <= 1) {
         // single host
         const data = await apiClient.getActiveExecutions(filters);
@@ -27,7 +28,6 @@ export function useExecutions(filters?: ExecutionFilters) {
             host_label: e.host_label || host.label,
             host_api_base_url: e.host_api_base_url || host.apiBaseUrl,
             host_file_base_url: e.host_file_base_url || host.fileDownloadBaseUrl,
-            plan: e.plan,
           }));
         }
         return data;
@@ -38,6 +38,7 @@ export function useExecutions(filters?: ExecutionFilters) {
       );
       // flatten and sort by created_at desc
       const merged = results.flat();
+      // If multiple statuses requested, keep all; backend already filters per status and we appended multiple params
       merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       return merged;
     },

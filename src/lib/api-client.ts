@@ -55,7 +55,9 @@ class ApiClient {
     if (filters?.include_completed_recent !== undefined) {
       params.append('include_completed_recent', filters.include_completed_recent.toString());
     }
-    if (filters?.status_filter) {
+    if (filters?.status_filters && filters.status_filters.length > 0) {
+      filters.status_filters.forEach((s) => params.append('status_filter', s));
+    } else if (filters?.status_filter) {
       params.append('status_filter', filters.status_filter);
     }
 
@@ -78,7 +80,11 @@ class ApiClient {
     const params = new URLSearchParams();
     if (filters?.limit) params.append('limit', String(filters.limit));
     if (filters?.include_completed_recent !== undefined) params.append('include_completed_recent', String(filters.include_completed_recent));
-    if (filters?.status_filter) params.append('status_filter', filters.status_filter);
+    if (filters?.status_filters && filters.status_filters.length > 0) {
+      filters.status_filters.forEach((s) => params.append('status_filter', s));
+    } else if (filters?.status_filter) {
+      params.append('status_filter', filters.status_filter);
+    }
     const apiPath = (host.apiPath || '/composite-pipelines').replace(/\/$/, '');
     const { data } = await client.get<CompositePipelineStatus[]>(`${apiPath}/executions/active`, { params });
     // annotate with host metadata

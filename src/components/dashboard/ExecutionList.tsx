@@ -38,6 +38,7 @@ export function ExecutionList({ onSelectExecution, selectedExecutionId }: Execut
     limit: 50,
     include_completed_recent: includeCompletedRecent,
     status_filter: (selectedStatuses.length === 1 ? selectedStatuses[0] : undefined),
+    status_filters: (selectedStatuses.length > 1 ? selectedStatuses : undefined),
   });
   const enabledHosts = useMemo(() => getEnabledHosts(), []);
   const [hostFilter, setHostFilter] = useState<string>('all');
