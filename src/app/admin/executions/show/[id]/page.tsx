@@ -144,7 +144,7 @@ export default function ExecutionShowPage() {
                 </Descriptions.Item>
                 <Descriptions.Item label="Overall Progress">{record.overall_progress}</Descriptions.Item>
                 <Descriptions.Item label="Duration">{formatDuration(record.duration_seconds)}</Descriptions.Item>
-                <Descriptions.Item label="Created At">{dayjs(record.created_at).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
+                <Descriptions.Item label="Created At">{dayjs(record.created_at).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss [KST]')}</Descriptions.Item>
               </Descriptions>
             )}
             {record?.steps && (
@@ -158,8 +158,8 @@ export default function ExecutionShowPage() {
                     { title: 'Step', dataIndex: 'name' },
                     { title: 'Status', dataIndex: 'status', render: (v: string) => <Tag color={v === 'running' ? 'blue' : v === 'completed' ? 'green' : v === 'failed' ? 'red' : 'default'}>{v}</Tag> },
                     { title: 'Progress', dataIndex: 'progress' },
-                    { title: 'Started', dataIndex: 'started_at', render: (v: string) => v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-' },
-                    { title: 'Completed', dataIndex: 'completed_at', render: (v: string) => v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-' },
+                    { title: 'Started', dataIndex: 'started_at', render: (v: string) => v ? dayjs(v).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss [KST]') : '-' },
+                    { title: 'Completed', dataIndex: 'completed_at', render: (v: string) => v ? dayjs(v).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss [KST]') : '-' },
                     { title: 'Jobs', dataIndex: 'job_ids', render: (arr: string[]) => Array.isArray(arr) ? arr.length : 0 },
                     { title: 'Outputs', dataIndex: 'output_keys', render: (arr: string[]) => Array.isArray(arr) ? arr.length : 0 },
                   ]}

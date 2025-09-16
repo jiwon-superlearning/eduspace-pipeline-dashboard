@@ -5,11 +5,16 @@ import { ConfigProvider, App as AntdApp, Layout, Menu } from 'antd';
 import Link from 'next/link';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { ReactNode, Suspense } from 'react';
 import { dataProvider } from '@/lib/refine-data-provider';
 import routerProvider from '@refinedev/nextjs-router/app';
 
 dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Seoul');
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (

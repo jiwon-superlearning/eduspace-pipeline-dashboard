@@ -9,7 +9,8 @@ export const dataProvider: DataProvider = {
       return { data: [], total: 0 } as any;
     }
 
-    const limit = pagination?.pageSize ?? 50;
+    // Refine 기본 pageSize(예: 10)에 종속되지 않도록, 서버 쿼리 최소 상한을 높인다
+    const limit = Math.max(pagination?.pageSize ?? 0, 1000);
     // Derive status filters with OR semantics: collect all 'status' filters/arrays; default to running/completed/pending
     const statusValues = new Set<string>();
     (filters || []).forEach((f: any) => {
