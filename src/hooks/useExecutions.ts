@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import type { CompositePipelineStatus, ExecutionFilters } from '@/lib/types';
-import { getEnabledHosts } from '@/lib/runtime-config.tsx';
+import { getEnabledHosts } from '@/lib/runtime-config';
 
 export function useExecutions(filters?: ExecutionFilters) {
   const refreshInterval = parseInt(

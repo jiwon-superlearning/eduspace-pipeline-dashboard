@@ -224,9 +224,6 @@ export function OutputPreview({
               <div className={cn('space-y-2')}>
                 {fileGroups.others.map(fileKey => {
                   const fileName = fileKey.split('/').pop() || 'file';
-                  const url = getDownloadUrl
-                    ? getDownloadUrl(fileKey)
-                    : `${getRuntimeFileDownloadBaseUrl()}/files/download/${fileKey}?raw=true`;
                   
                   return (
                     <div key={fileKey} className={cn('flex items-center gap-2 p-2 border rounded')}>
@@ -235,7 +232,15 @@ export function OutputPreview({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => window.open(url, '_blank')}
+                        onClick={async () => {
+                          const res = getDownloadUrl
+                            ? getDownloadUrl(fileKey)
+                            : `${getRuntimeFileDownloadBaseUrl()}/files/download/${fileKey}?raw=true`;
+                          const finalUrl = (typeof (res as any)?.then === 'function')
+                            ? await (res as Promise<string>)
+                            : (res as string);
+                          window.open(finalUrl, '_blank');
+                        }}
                       >
                         <Download className={cn('h-4 w-4')} />
                       </Button>

@@ -18,6 +18,7 @@ export interface RuntimeConfig {
   fileDownloadBaseUrl: string;
   hosts: HostConfig[];
   converterBaseUrl?: string;
+  plan?: 'free' | 'paid';
 }
 
 const DEFAULTS: RuntimeConfig = {
@@ -71,6 +72,7 @@ const DEFAULTS: RuntimeConfig = {
   converterBaseUrl:
     process.env.NEXT_PUBLIC_CONVERTER_BASE_URL ||
     '',
+  plan: 'paid',
 };
 
 const STORAGE_KEY = 'runtime-config-v2';
@@ -84,6 +86,7 @@ interface RuntimeConfigContextValue {
   updateHost: (id: string, partial: Partial<Omit<HostConfig, 'id'>>) => void;
   removeHost: (id: string) => void;
   setConverterBaseUrl: (url: string) => void;
+  setPlan: (plan: 'free' | 'paid') => void;
 }
 
 const RuntimeConfigContext = createContext<RuntimeConfigContextValue | undefined>(undefined);
@@ -117,6 +120,7 @@ export function RuntimeConfigProvider({ children }: { children: React.ReactNode 
           fileDownloadBaseUrl: parsed.fileDownloadBaseUrl || DEFAULTS.fileDownloadBaseUrl,
           hosts: nextHosts,
           converterBaseUrl: parsed.converterBaseUrl || DEFAULTS.converterBaseUrl,
+          plan: parsed.plan || DEFAULTS.plan,
         }));
       } else {
         // Try read legacy key
@@ -137,6 +141,7 @@ export function RuntimeConfigProvider({ children }: { children: React.ReactNode 
                 },
               ],
               converterBaseUrl: DEFAULTS.converterBaseUrl,
+              plan: DEFAULTS.plan,
             }));
           } catch {}
         }
@@ -270,7 +275,7 @@ export function getRuntimePlan(): 'free' | 'paid' {
       if (parsed.plan === 'free' || parsed.plan === 'paid') return parsed.plan;
     }
   } catch {}
-  return DEFAULTS.plan;
+  return DEFAULTS.plan || 'paid';
 }
 
 

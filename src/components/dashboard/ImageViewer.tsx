@@ -28,7 +28,7 @@ interface ImageViewerProps {
   fileKeys: string[];
   className?: string;
   showThumbnails?: boolean;
-  getDownloadUrl?: (fileKey: string) => string;
+  getDownloadUrl?: (fileKey: string) => string | Promise<string>;
 }
 
 export function ImageViewer({ fileKeys, className = '', showThumbnails = true, getDownloadUrl }: ImageViewerProps) {
@@ -45,9 +45,18 @@ export function ImageViewer({ fileKeys, className = '', showThumbnails = true, g
       if (!imageUrls[fileKey] && !loading[fileKey]) {
         setLoading(prev => ({ ...prev, [fileKey]: true }));
         try {
-          const url = getDownloadUrl ? getDownloadUrl(fileKey) : await apiClient.getFileUrl(fileKey);
-          setImageUrls(prev => ({ ...prev, [fileKey]: url }));
-          setErrors(prev => ({ ...prev, [fileKey]: '' }));
+          if (getDownloadUrl) {
+            const maybe = getDownloadUrl(fileKey);
+            const url = (maybe && typeof (maybe as any).then === 'function')
+              ? await (maybe as Promise<string>)
+              : (maybe as string);
+            setImageUrls(prev => ({ ...prev, [fileKey]: url }));
+            setErrors(prev => ({ ...prev, [fileKey]: '' }));
+          } else {
+            const url = await apiClient.getFileUrl(fileKey);
+            setImageUrls(prev => ({ ...prev, [fileKey]: url }));
+            setErrors(prev => ({ ...prev, [fileKey]: '' }));
+          }
         } catch (err) {
           console.error(`Failed to load image ${fileKey}:`, err);
           setErrors(prev => ({ ...prev, [fileKey]: 'Failed to load image' }));

@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  transpilePackages: [
+    '@refinedev/core',
+    '@refinedev/antd',
+    '@refinedev/nextjs-router',
+  ],
 };
 
 export default nextConfig;

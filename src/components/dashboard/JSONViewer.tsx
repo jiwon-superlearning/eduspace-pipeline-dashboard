@@ -27,7 +27,7 @@ interface JSONViewerProps {
   fileName?: string;
   className?: string;
   showPreview?: boolean;
-  getDownloadUrl?: (fileKey: string) => string;
+  getDownloadUrl?: (fileKey: string) => string | Promise<string>;
 }
 
 export function JSONViewer({ fileKey, fileName = 'data.json', className = '', showPreview = true, getDownloadUrl }: JSONViewerProps) {
@@ -42,7 +42,13 @@ export function JSONViewer({ fileKey, fileName = 'data.json', className = '', sh
     const loadJSON = async () => {
       setIsLoading(true);
       try {
-        const url = getDownloadUrl ? getDownloadUrl(fileKey) : await apiClient.getFileUrl(fileKey);
+        let url: string;
+        if (getDownloadUrl) {
+          const maybe = getDownloadUrl(fileKey);
+          url = (maybe && typeof (maybe as any).then === 'function') ? await (maybe as Promise<string>) : (maybe as string);
+        } else {
+          url = await apiClient.getFileUrl(fileKey);
+        }
         setFileUrl(url);
         
         // Fetch and parse JSON

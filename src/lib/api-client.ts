@@ -1,8 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
-import { getRuntimeApiBaseUrl, getRuntimeFileDownloadBaseUrl } from './runtime-config';
+import { getRuntimeApiBaseUrl, getRuntimeFileDownloadBaseUrl, getEnabledHosts, getRuntimePlan } from './runtime-config';
 import type { CompositePipelineStatus, ExecutionFilters } from './types';
 import type { HostConfig } from './runtime-config';
-import { getEnabledHosts } from './runtime-config';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -168,7 +167,21 @@ class ApiClient {
   async getFileUrl(fileKey: string): Promise<string> {
     // Use the external API endpoint for downloading files
     const baseUrl = getRuntimeFileDownloadBaseUrl();
-    return `${baseUrl}/files/download/${fileKey}?raw=true`;
+    const url = `${baseUrl}/files/download/${fileKey}?raw=true`;
+    // If headers configured (e.g., X-Plan for paid), fetch blob and return object URL
+    try {
+      const hosts = getEnabledHosts();
+      const plan = getRuntimePlan?.() as 'free' | 'paid' | undefined;
+      // Try match host by baseUrl first
+      const matched = hosts.find((h) => (h.fileDownloadBaseUrl || '').replace(/\/$/, '') === baseUrl.replace(/\/$/, ''))
+        || hosts.find((h) => h.headers && Object.keys(h.headers).length > 0);
+      const effectiveHeaders: Record<string, string> | undefined = matched?.headers || (plan === 'paid' ? { 'X-Plan': 'paid' } : undefined);
+      if (effectiveHeaders && Object.keys(effectiveHeaders).length > 0) {
+        const resp = await axios.get(url, { headers: { ...effectiveHeaders }, responseType: 'blob' });
+        return URL.createObjectURL(resp.data);
+      }
+    } catch {}
+    return url;
   }
 
   async getFileUrlFromHost(host: HostConfig, fileKey: string): Promise<string> {
@@ -200,6 +213,43 @@ class ApiClient {
       { responseType: 'blob' }
     );
     return response.data;
+  }
+
+  /**
+   * Fetch JSON content for a given fileKey, honoring per-host headers when provided
+   */
+  async getFileJson(fileKey: string, host?: HostConfig): Promise<any> {
+    try {
+      if (host) {
+        const filePath = (host.fileDownloadPath || '/files').replace(/\/$/, '');
+        const url = `${host.fileDownloadBaseUrl}${filePath}/download/${fileKey}?raw=true`;
+        let effectiveHeaders: Record<string, string> | undefined = host.headers;
+        try {
+          const hosts = getEnabledHosts();
+          const match = host.id ? hosts.find((h) => h.id === host.id) : undefined;
+          if (match && match.headers && Object.keys(match.headers).length > 0) {
+            effectiveHeaders = match.headers;
+          }
+        } catch {}
+        const { data } = await axios.get(url, { headers: effectiveHeaders, responseType: 'text' as any });
+        try { return typeof data === 'string' ? JSON.parse(data) : data; } catch { return data; }
+      }
+      // global
+      const baseUrl = getRuntimeFileDownloadBaseUrl();
+      const plan = getRuntimePlan?.() as 'free' | 'paid' | undefined;
+      const url = `${baseUrl}/files/download/${fileKey}?raw=true`;
+      let headers: Record<string, string> | undefined;
+      try {
+        const hosts = getEnabledHosts();
+        const matched = hosts.find((h) => (h.fileDownloadBaseUrl || '').replace(/\/$/, '') === baseUrl.replace(/\/$/, ''))
+          || hosts.find((h) => h.headers && Object.keys(h.headers).length > 0);
+        headers = matched?.headers || (plan === 'paid' ? { 'X-Plan': 'paid' } : undefined);
+      } catch {}
+      const { data } = await axios.get(url, { headers, responseType: 'text' as any });
+      try { return typeof data === 'string' ? JSON.parse(data) : data; } catch { return data; }
+    } catch (e) {
+      throw e;
+    }
   }
 }
 
