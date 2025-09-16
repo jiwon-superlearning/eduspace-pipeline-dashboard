@@ -49,27 +49,44 @@ interface PDFViewerProps {
   fileName?: string;
   className?: string;
   showPreview?: boolean;
+  getDownloadUrl?: (fileKey: string) => string | Promise<string>;
 }
 
-export function PDFViewer({ fileKey, fileName = 'document.pdf', className = '', showPreview = true }: PDFViewerProps) {
+export function PDFViewer({ fileKey, fileName = 'document.pdf', className = '', showPreview = true, getDownloadUrl }: PDFViewerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fileUrl, setFileUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsLoading(true);
-    apiClient.getFileUrl(fileKey)
-      .then(url => {
-        setFileUrl(url);
-        setError(null);
-      })
-      .catch((err) => {
+    let cancelled = false;
+    const run = async () => {
+      setIsLoading(true);
+      try {
+        if (getDownloadUrl) {
+          const maybe = getDownloadUrl(fileKey);
+          const url = (maybe && typeof (maybe as any).then === 'function') ? await (maybe as Promise<string>) : (maybe as string);
+          if (!cancelled) {
+            setFileUrl(url);
+            setError(null);
+          }
+        } else {
+          const url2 = await apiClient.getFileUrl(fileKey);
+          if (!cancelled) {
+            setFileUrl(url2);
+            setError(null);
+          }
+        }
+      } catch (err) {
         console.error('Failed to get file URL:', err);
-        setError('Failed to load PDF URL');
-      })
-      .finally(() => setIsLoading(false));
-  }, [fileKey]);
+        if (!cancelled) setError('Failed to load PDF URL');
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [fileKey, getDownloadUrl]);
 
   const handleDownload = () => {
     if (fileUrl) {

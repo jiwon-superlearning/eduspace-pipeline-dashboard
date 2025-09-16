@@ -14,6 +14,7 @@ services:
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
       - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://classday.iptime.org:8000/api/v1}
+      - NEXT_PUBLIC_CONVERTER_BASE_URL=http://converter:8001
       - NEXT_PUBLIC_REFRESH_INTERVAL=${NEXT_PUBLIC_REFRESH_INTERVAL:-3000}
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
@@ -25,6 +26,20 @@ services:
     # If you need to join the external network as in prod, uncomment below
     # networks:
     #   - pipeline-network
+    restart: unless-stopped
+
+  converter:
+    build:
+      context: ./converter
+      dockerfile: Dockerfile
+    container_name: eduspace-converter-dev
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./converter:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+    ports:
+      - "8001:8001"
     restart: unless-stopped
 
 volumes:

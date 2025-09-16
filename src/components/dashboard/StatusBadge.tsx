@@ -59,3 +59,34 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     </Badge>
   );
 }
+
+interface HostBadgeProps {
+  id?: string;
+  label: string;
+  className?: string;
+}
+
+export function HostBadge({ id, label, className }: HostBadgeProps) {
+  const key = (id || label || '').toLowerCase();
+  const labelLower = (label || '').toLowerCase();
+  const colorClasses = (() => {
+    // Plan priority: paid / free color first if detected in label
+    if (labelLower.includes('paid')) return 'border-rose-200 text-rose-700 bg-rose-50';
+    if (labelLower.includes('free')) return 'border-emerald-200 text-emerald-700 bg-emerald-50';
+    if (key.includes('public')) return 'border-emerald-200 text-emerald-700 bg-emerald-50';
+    if (key.includes('develop') || key.includes('dev')) return 'border-indigo-200 text-indigo-700 bg-indigo-50';
+    if (key.includes('legacy')) return 'border-amber-200 text-amber-800 bg-amber-50';
+    return 'border-blue-200 text-blue-700 bg-blue-50';
+  })();
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        /* color */ colorClasses,
+        className
+      )}
+    >
+      {label}
+    </Badge>
+  );
+}

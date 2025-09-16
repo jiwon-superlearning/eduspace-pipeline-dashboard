@@ -6,19 +6,21 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import RuntimeConfigDialog from '@/components/settings/RuntimeConfigDialog';
+import { useRuntimeConfig } from '@/lib/runtime-config';
 
 interface DashboardShellProps {
   children: React.ReactNode;
 }
 
 export function DashboardShell({ children }: DashboardShellProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [query, setQuery] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { config } = useRuntimeConfig();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -72,8 +74,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
             <Button
               variant="ghost"
               size="icon"
-              className={cn('md:hidden')}
-              onClick={() => setMobileOpen((v) => !v)}
+              onClick={() => setSidebarOpen((v) => !v)}
               aria-label="Toggle navigation"
             >
               <Menu className={cn('h-5 w-5')} />
@@ -110,6 +111,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           </div>
 
           <div className={cn('flex items-center gap-1')}>
+            {/* Global plan toggle removed; plan is host-specific via headers */}
             <Button variant="ghost" size="icon" onClick={() => window.location.reload()} title="Refresh">
               <RefreshCw className={cn('h-4 w-4')} />
             </Button>
@@ -129,27 +131,29 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
       {/* Shell */}
       <div className={cn('flex')}> 
-        {/* Sidebar */}
-        <aside className={cn(
-          /* sizing */ 'w-64',
-          /* surface */ 'border-r bg-background',
-          /* layout */ 'hidden md:block'
-        )}>
-          <nav className={cn('p-3 space-y-1')}>
-            <NavItem icon={<ListChecks className={cn('h-4 w-4')} />} label="Executions" active />
-            <NavItem icon={<Activity className={cn('h-4 w-4')} />} label="Live" />
-            <NavItem icon={<Settings className={cn('h-4 w-4')} />} label="Settings" />
-          </nav>
-        </aside>
+        {/* Sidebar (desktop) */}
+        {sidebarOpen && (
+          <aside className={cn(
+            /* sizing */ 'w-64',
+            /* surface */ 'border-r bg-background',
+            /* layout */ 'hidden md:block'
+          )}>
+            <nav className={cn('p-3 space-y-1')}>
+              <NavItem icon={<ListChecks className={cn('h-4 w-4')} />} label="Executions" active />
+              <NavItem icon={<Activity className={cn('h-4 w-4')} />} label="Live" />
+              <NavItem icon={<Settings className={cn('h-4 w-4')} />} label="Settings" />
+            </nav>
+          </aside>
+        )}
 
         {/* Mobile Sidebar */}
-        {mobileOpen && (
+        {sidebarOpen && (
           <div className={cn(
             /* position */ 'fixed inset-0 z-40 md:hidden'
           )}>
             <div
               className={cn('absolute inset-0 bg-black/40')}
-              onClick={() => setMobileOpen(false)}
+              onClick={() => setSidebarOpen(false)}
             />
             <aside className={cn(
               /* position */ 'absolute left-0 top-0 h-full',
@@ -157,9 +161,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
               /* surface */ 'bg-background border-r'
             )}>
               <nav className={cn('p-3 space-y-1')}>
-                <NavItem icon={<ListChecks className={cn('h-4 w-4')} />} label="Executions" active onClick={() => setMobileOpen(false)} />
-                <NavItem icon={<Activity className={cn('h-4 w-4')} />} label="Live" onClick={() => setMobileOpen(false)} />
-                <NavItem icon={<Settings className={cn('h-4 w-4')} />} label="Settings" onClick={() => setMobileOpen(false)} />
+                <NavItem icon={<ListChecks className={cn('h-4 w-4')} />} label="Executions" active onClick={() => setSidebarOpen(false)} />
+                <NavItem icon={<Activity className={cn('h-4 w-4')} />} label="Live" onClick={() => setSidebarOpen(false)} />
+                <NavItem icon={<Settings className={cn('h-4 w-4')} />} label="Settings" onClick={() => setSidebarOpen(false)} />
               </nav>
             </aside>
           </div>

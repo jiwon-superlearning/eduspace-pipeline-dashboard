@@ -7,6 +7,8 @@ import StatsCards from '@/components/dashboard/StatsCards';
 import type { CompositePipelineStatus } from '@/lib/types';
 import { Activity } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();

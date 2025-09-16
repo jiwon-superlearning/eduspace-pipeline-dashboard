@@ -27,9 +27,10 @@ interface JSONViewerProps {
   fileName?: string;
   className?: string;
   showPreview?: boolean;
+  getDownloadUrl?: (fileKey: string) => string;
 }
 
-export function JSONViewer({ fileKey, fileName = 'data.json', className = '', showPreview = true }: JSONViewerProps) {
+export function JSONViewer({ fileKey, fileName = 'data.json', className = '', showPreview = true, getDownloadUrl }: JSONViewerProps) {
   const [jsonData, setJsonData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export function JSONViewer({ fileKey, fileName = 'data.json', className = '', sh
     const loadJSON = async () => {
       setIsLoading(true);
       try {
-        const url = await apiClient.getFileUrl(fileKey);
+        const url = getDownloadUrl ? getDownloadUrl(fileKey) : await apiClient.getFileUrl(fileKey);
         setFileUrl(url);
         
         // Fetch and parse JSON
@@ -59,7 +60,7 @@ export function JSONViewer({ fileKey, fileName = 'data.json', className = '', sh
     };
 
     loadJSON();
-  }, [fileKey]);
+  }, [fileKey, getDownloadUrl]);
 
   const handleDownload = () => {
     if (fileUrl) {

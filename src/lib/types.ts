@@ -65,6 +65,11 @@ export interface CompositePipelineStatus {
   duration_seconds: number;
   steps: StepExecutionStatus[];
   error_message?: string;
+  // Optional metadata for multi-host aggregation
+  host_id?: string;
+  host_label?: string;
+  host_api_base_url?: string;
+  host_file_base_url?: string;
 }
 
 export interface CompositePipelineResponse {

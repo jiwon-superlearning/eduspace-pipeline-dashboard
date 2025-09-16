@@ -9,7 +9,23 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://classday.iptime.org:8000/api/v1}
+      - NEXT_PUBLIC_CONVERTER_BASE_URL=${NEXT_PUBLIC_CONVERTER_BASE_URL:-http://converter:8001}
       - NEXT_PUBLIC_REFRESH_INTERVAL=${NEXT_PUBLIC_REFRESH_INTERVAL:-5000}
+  converter:
+    build:
+      context: ./converter
+      dockerfile: Dockerfile
+    container_name: eduspace-converter
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./converter:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+    networks:
+      - pipeline-network
     restart: unless-stopped
     networks:
       - pipeline-network

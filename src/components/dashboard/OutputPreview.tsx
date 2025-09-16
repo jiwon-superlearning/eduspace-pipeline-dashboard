@@ -17,13 +17,14 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getRuntimeFileDownloadBaseUrl } from '@/lib/runtime-config.tsx';
+import { getRuntimeFileDownloadBaseUrl } from '@/lib/runtime-config';
 
-interface OutputPreviewProps {
+export interface OutputPreviewProps {
   outputKeys: string[];
   className?: string;
   title?: string;
   defaultExpanded?: boolean;
+  getDownloadUrl?: (fileKey: string) => string | Promise<string>;
 }
 
 interface FileGroup {
@@ -37,7 +38,8 @@ export function OutputPreview({
   outputKeys, 
   className = '', 
   title = 'Outputs',
-  defaultExpanded = false 
+  defaultExpanded = false,
+  getDownloadUrl,
 }: OutputPreviewProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [activeTab, setActiveTab] = useState<string>('');
@@ -77,14 +79,16 @@ export function OutputPreview({
     return groups;
   }, [outputKeys, activeTab]);
 
-  const handleDownloadAll = () => {
+  const handleDownloadAll = async () => {
     // In a real implementation, this could zip all files
     // For now, we'll just open each file in a new tab
-    outputKeys.forEach(async (key) => {
-      const baseUrl = getRuntimeFileDownloadBaseUrl();
-      const url = `${baseUrl}/files/download/${key}?raw=true`;
+    for (const key of outputKeys) {
+      const maybe = getDownloadUrl
+        ? getDownloadUrl(key)
+        : `${getRuntimeFileDownloadBaseUrl()}/files/download/${key}?raw=true`;
+      const url = (typeof (maybe as any)?.then === 'function') ? await (maybe as Promise<string>) : (maybe as string);
       window.open(url, '_blank');
-    });
+    }
   };
 
   if (outputKeys.length === 0) {
@@ -178,7 +182,7 @@ export function OutputPreview({
 
             <TabsContent value="images" className={cn('mt-4')}>
               {fileGroups.images.length > 0 && (
-                <ImageViewer fileKeys={fileGroups.images} />
+                <ImageViewer fileKeys={fileGroups.images} getDownloadUrl={getDownloadUrl} />
               )}
             </TabsContent>
 
@@ -192,6 +196,7 @@ export function OutputPreview({
                       fileKey={pdfKey}
                       fileName={fileName}
                       showPreview={false}
+                      getDownloadUrl={getDownloadUrl}
                     />
                   );
                 })}
@@ -208,6 +213,7 @@ export function OutputPreview({
                       fileKey={jsonKey}
                       fileName={fileName}
                       showPreview={false}
+                      getDownloadUrl={getDownloadUrl}
                     />
                   );
                 })}
@@ -218,8 +224,9 @@ export function OutputPreview({
               <div className={cn('space-y-2')}>
                 {fileGroups.others.map(fileKey => {
                   const fileName = fileKey.split('/').pop() || 'file';
-                  const baseUrl = getRuntimeFileDownloadBaseUrl();
-                  const url = `${baseUrl}/files/download/${fileKey}?raw=true`;
+                  const url = getDownloadUrl
+                    ? getDownloadUrl(fileKey)
+                    : `${getRuntimeFileDownloadBaseUrl()}/files/download/${fileKey}?raw=true`;
                   
                   return (
                     <div key={fileKey} className={cn('flex items-center gap-2 p-2 border rounded')}>

@@ -28,9 +28,10 @@ interface ImageViewerProps {
   fileKeys: string[];
   className?: string;
   showThumbnails?: boolean;
+  getDownloadUrl?: (fileKey: string) => string;
 }
 
-export function ImageViewer({ fileKeys, className = '', showThumbnails = true }: ImageViewerProps) {
+export function ImageViewer({ fileKeys, className = '', showThumbnails = true, getDownloadUrl }: ImageViewerProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
@@ -44,7 +45,7 @@ export function ImageViewer({ fileKeys, className = '', showThumbnails = true }:
       if (!imageUrls[fileKey] && !loading[fileKey]) {
         setLoading(prev => ({ ...prev, [fileKey]: true }));
         try {
-          const url = await apiClient.getFileUrl(fileKey);
+          const url = getDownloadUrl ? getDownloadUrl(fileKey) : await apiClient.getFileUrl(fileKey);
           setImageUrls(prev => ({ ...prev, [fileKey]: url }));
           setErrors(prev => ({ ...prev, [fileKey]: '' }));
         } catch (err) {
@@ -55,7 +56,7 @@ export function ImageViewer({ fileKeys, className = '', showThumbnails = true }:
         }
       }
     });
-  }, [fileKeys]);
+  }, [fileKeys, getDownloadUrl]);
 
   const handlePrevious = () => {
     setSelectedIndex(prev => (prev > 0 ? prev - 1 : fileKeys.length - 1));
